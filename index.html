@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+		
+		header {
+			background-color: #fff7f3;
+			padding: 1px;
+			text-align: center;
+			font-size: 18px;
+			color: #ae017e;
+		}
+		
+        </style>
+        <title>WEBGIS 2D CIREBON</title>
+    </head>
+    <body>
+	<header>
+		<h1>PERSEBARAN LOKASI WIFI PEMDA DI KOTA CIREBON</h1>
+	</header>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/BatasAdministrasiKelurahan_1.js"></script>
+        <script src="data/JaringanJalan_2.js"></script>
+        <script src="data/WifiPemda_3.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).fitBounds([[-6.80547692609461,108.47981357390172],[-6.686281390213505,108.63097214081819]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
+          var tagName = event.target.tagName,
+            popup = map._popup;
+          // Also check if flag is already set.
+          if (tagName === "IMG" && popup && !popup._updated) {
+            popup._updated = true; // Set flag to prevent looping.
+            popup.update();
+          }
+        }, true);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_OSMStandard_0');
+        map.getPane('pane_OSMStandard_0').style.zIndex = 400;
+        var layer_OSMStandard_0 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSMStandard_0',
+            opacity: 0.7,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMStandard_0;
+        map.addLayer(layer_OSMStandard_0);
+        function pop_BatasAdministrasiKelurahan_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? autolinker.link(feature.properties['id'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['provinsi'] !== null ? autolinker.link(feature.properties['provinsi'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['kota'] !== null ? autolinker.link(feature.properties['kota'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">kecamatan</th>\
+                        <td class="visible-with-data" id="kecamatan">' + (feature.properties['kecamatan'] !== null ? autolinker.link(feature.properties['kecamatan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">kelurahan</th>\
+                        <td class="visible-with-data" id="kelurahan">' + (feature.properties['kelurahan'] !== null ? autolinker.link(feature.properties['kelurahan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sumber'] !== null ? autolinker.link(feature.properties['sumber'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['luas'] !== null ? autolinker.link(feature.properties['luas'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+            var popup = layer.getPopup();
+            var content = popup.getContent();
+            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+            popup.setContent(updatedContent);
+        }
+
+        function style_BatasAdministrasiKelurahan_1_0(feature) {
+            switch(String(feature.properties['kelurahan'])) {
+                case 'Kel. Argasunya':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,251,252,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Drajat':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(252,244,246,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Harjamukti':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(249,237,239,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Jagasatru':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(246,229,232,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Kalijaga':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(243,222,225,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Karyamulya':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,214,218,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Kebonbaru':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(236,207,212,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Kecapi':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(233,199,205,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Kejaksan':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,192,198,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Kesambi':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(227,185,191,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Kesenden':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,177,184,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Kesepuhan':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(220,170,178,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Larangan':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(217,162,171,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Lemahwungkuk':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(214,155,164,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Panjunan':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(211,147,157,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Pegambiran':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(208,140,150,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Pekalangan':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(204,132,144,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Pekalipan':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,125,137,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Pekiringan':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(198,118,130,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Pulasaren':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(195,110,123,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Sukapura':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(192,103,117,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kel. Sunyaragi':
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(188,95,110,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_BatasAdministrasiKelurahan_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(156,74,87,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_BatasAdministrasiKelurahan_1');
+        map.getPane('pane_BatasAdministrasiKelurahan_1').style.zIndex = 401;
+        map.getPane('pane_BatasAdministrasiKelurahan_1').style['mix-blend-mode'] = 'normal';
+        var layer_BatasAdministrasiKelurahan_1 = new L.geoJson(json_BatasAdministrasiKelurahan_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BatasAdministrasiKelurahan_1',
+            layerName: 'layer_BatasAdministrasiKelurahan_1',
+            pane: 'pane_BatasAdministrasiKelurahan_1',
+            onEachFeature: pop_BatasAdministrasiKelurahan_1,
+            style: style_BatasAdministrasiKelurahan_1_0,
+        });
+        bounds_group.addLayer(layer_BatasAdministrasiKelurahan_1);
+        map.addLayer(layer_BatasAdministrasiKelurahan_1);
+        function pop_JaringanJalan_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['objectid'] !== null ? autolinker.link(feature.properties['objectid'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">namobj</th>\
+                        <td class="visible-with-data" id="namobj">' + (feature.properties['namobj'] !== null ? autolinker.link(feature.properties['namobj'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['orde01'] !== null ? autolinker.link(feature.properties['orde01'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['orde02'] !== null ? autolinker.link(feature.properties['orde02'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['jnsrsr'] !== null ? autolinker.link(feature.properties['jnsrsr'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['stsjrn'] !== null ? autolinker.link(feature.properties['stsjrn'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wadmpr'] !== null ? autolinker.link(feature.properties['wadmpr'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wadmkk'] !== null ? autolinker.link(feature.properties['wadmkk'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['remark'] !== null ? autolinker.link(feature.properties['remark'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sbdata'] !== null ? autolinker.link(feature.properties['sbdata'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shape_leng'] !== null ? autolinker.link(feature.properties['shape_leng'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+            var popup = layer.getPopup();
+            var content = popup.getContent();
+            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+            popup.setContent(updatedContent);
+        }
+
+        function style_JaringanJalan_2_0() {
+            return {
+                pane: 'pane_JaringanJalan_2',
+                opacity: 1,
+                color: 'rgba(95,91,91,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_JaringanJalan_2');
+        map.getPane('pane_JaringanJalan_2').style.zIndex = 402;
+        map.getPane('pane_JaringanJalan_2').style['mix-blend-mode'] = 'normal';
+        var layer_JaringanJalan_2 = new L.geoJson(json_JaringanJalan_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_JaringanJalan_2',
+            layerName: 'layer_JaringanJalan_2',
+            pane: 'pane_JaringanJalan_2',
+            onEachFeature: pop_JaringanJalan_2,
+            style: style_JaringanJalan_2_0,
+        });
+        bounds_group.addLayer(layer_JaringanJalan_2);
+        map.addLayer(layer_JaringanJalan_2);
+        function pop_WifiPemda_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">kecamatan</th>\
+                        <td class="visible-with-data" id="kecamatan">' + (feature.properties['kecamatan'] !== null ? autolinker.link(feature.properties['kecamatan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">name</th>\
+                        <td class="visible-with-data" id="name">' + (feature.properties['name'] !== null ? autolinker.link(feature.properties['name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['layanan'] !== null ? autolinker.link(feature.properties['layanan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">keterangan</th>\
+                        <td class="visible-with-data" id="keterangan">' + (feature.properties['keterangan'] !== null ? autolinker.link(feature.properties['keterangan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">status</th>\
+                        <td class="visible-with-data" id="status">' + (feature.properties['status'] !== null ? autolinker.link(feature.properties['status'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+            var popup = layer.getPopup();
+            var content = popup.getContent();
+            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+            popup.setContent(updatedContent);
+        }
+
+        function style_WifiPemda_3_0() {
+            return {
+                pane: 'pane_WifiPemda_3',
+                radius: 7.199999999999999,
+                opacity: 1,
+                color: 'rgba(231,179,187,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,245,112,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_WifiPemda_3');
+        map.getPane('pane_WifiPemda_3').style.zIndex = 403;
+        map.getPane('pane_WifiPemda_3').style['mix-blend-mode'] = 'normal';
+        var layer_WifiPemda_3 = new L.geoJson(json_WifiPemda_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_WifiPemda_3',
+            layerName: 'layer_WifiPemda_3',
+            pane: 'pane_WifiPemda_3',
+            onEachFeature: pop_WifiPemda_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_WifiPemda_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_WifiPemda_3);
+        map.addLayer(layer_WifiPemda_3);
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'<img src="legend/WifiPemda_3.png" /> Wifi Pemda': layer_WifiPemda_3,'<img src="legend/JaringanJalan_2.png" /> Jaringan Jalan': layer_JaringanJalan_2,'Batas Administrasi Kelurahan<br /><table><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelArgasunya0.png" /></td><td>Kel. Argasunya</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelDrajat1.png" /></td><td>Kel. Drajat</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelHarjamukti2.png" /></td><td>Kel. Harjamukti</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelJagasatru3.png" /></td><td>Kel. Jagasatru</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKalijaga4.png" /></td><td>Kel. Kalijaga</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKaryamulya5.png" /></td><td>Kel. Karyamulya</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKebonbaru6.png" /></td><td>Kel. Kebonbaru</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKecapi7.png" /></td><td>Kel. Kecapi</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKejaksan8.png" /></td><td>Kel. Kejaksan</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKesambi9.png" /></td><td>Kel. Kesambi</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKesenden10.png" /></td><td>Kel. Kesenden</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelKesepuhan11.png" /></td><td>Kel. Kesepuhan</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelLarangan12.png" /></td><td>Kel. Larangan</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelLemahwungkuk13.png" /></td><td>Kel. Lemahwungkuk</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelPanjunan14.png" /></td><td>Kel. Panjunan</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelPegambiran15.png" /></td><td>Kel. Pegambiran</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelPekalangan16.png" /></td><td>Kel. Pekalangan</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelPekalipan17.png" /></td><td>Kel. Pekalipan</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelPekiringan18.png" /></td><td>Kel. Pekiringan</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelPulasaren19.png" /></td><td>Kel. Pulasaren</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelSukapura20.png" /></td><td>Kel. Sukapura</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_KelSunyaragi21.png" /></td><td>Kel. Sunyaragi</td></tr><tr><td style="text-align: center;"><img src="legend/BatasAdministrasiKelurahan_1_22.png" /></td><td></td></tr></table>': layer_BatasAdministrasiKelurahan_1,"OSM Standard": layer_OSMStandard_0,},{collapsed:false}).addTo(map);
+        setBounds();
+		
+		var scale = L.control.scale({
+			metric: true,
+			imperial: false,
+			});
+		scale.addTo(map);
+		
+        </script>
+    </body>
+</html>
